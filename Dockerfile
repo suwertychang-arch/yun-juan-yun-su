@@ -7,9 +7,9 @@ RUN npm install --production
 
 COPY . .
 
-# 默认使用 DeepSeek V4，API Key 通过环境变量注入
-ENV AI_BASE_URL=https://api.deepseek.com
-ENV AI_MODEL=deepseek-v4-pro
+# 默认使用 DeepSeek，API Key 通过环境变量注入
+ENV AI_BASE_URL=https://api.deepseek.com/v1
+ENV AI_MODEL=deepseek-chat
 
 EXPOSE 3000
 

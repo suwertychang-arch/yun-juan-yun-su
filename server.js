@@ -1,46 +1,49 @@
 const express = require('express');
 const path = require('path');
 
+const APP_VERSION = 'v2.1';
+
 const app = express();
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '2mb' }));
+// HTML 不缓存，避免手机端加载到旧版本页面
+app.use((req, res, next) => {
+  if (req.path === '/' || req.path.endsWith('.html')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  }
+  next();
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ─── AI 配置（从环境变量读取，用户无需配置）───
+// ─── AI 配置（从环境变量读取）───
 const AI_API_KEY = process.env.AI_API_KEY || '';
 const AI_BASE_URL = process.env.AI_BASE_URL || 'https://api.deepseek.com';
 const AI_MODEL = process.env.AI_MODEL || 'deepseek-v4-pro';
 
-// ─── 房间状态（内存存储，重启即清空）───
-const rooms = {};
-const ONLINE_THRESHOLD = 15000; // 15秒内有poll就算在线
+// ─── 单会话状态（Demo 模式，单人切换视角）───
+const session = {
+  confessions: { male: [], female: [] },
+  advices: [],
+  mentorThinking: false,
+  mentorError: null,
+};
 
-function getRoom(roomId) {
-  if (!rooms[roomId]) {
-    rooms[roomId] = {
-      confessions: { male: [], female: [] },
-      advices: [],
-      lastSeen: { male: 0, female: 0 },
-      mentorThinking: false,
-      mentorError: null,
-    };
-  }
-  return rooms[roomId];
-}
-
-function isOnline(room, identity) {
-  return Date.now() - room.lastSeen[identity] < ONLINE_THRESHOLD;
-}
-
-function getFilteredState(room, identity) {
+// 按身份过滤状态：共同解读所有人可见，私聊建议只返回当前用户的
+function getFilteredState(identity) {
+  const otherIdentity = identity === 'male' ? 'female' : 'male';
+  const filteredAdvices = session.advices.map(a => ({
+    id: a.id,
+    sharedPart: a.sharedPart || '',
+    privatePart: a.privatePart ? (a.privatePart[identity] || '') : '',
+    timestamp: a.timestamp,
+  }));
   return {
-    online: {
-      male: isOnline(room, 'male'),
-      female: isOnline(room, 'female'),
-    },
-    myConfessions: room.confessions[identity] || [],
-    advices: room.advices,
-    mentorThinking: room.mentorThinking,
-    mentorError: room.mentorError,
+    myConfessions: session.confessions[identity] || [],
+    otherHasConfessed: (session.confessions[otherIdentity] || []).length > 0,
+    advices: filteredAdvices,
+    mentorThinking: session.mentorThinking,
+    mentorError: session.mentorError,
+    // 用于 UI 显示对方是否已倾诉（但不显示内容）
+    otherConfessionCount: (session.confessions[otherIdentity] || []).length,
   };
 }
 
@@ -151,31 +154,71 @@ const MENTOR_SYSTEM_PROMPT = `你是一个恋爱app内置的AI关系沟通导师
 多轮交流中记住已确认与待确认的信息。有人纠正时明确更新，不沿用旧判断；后续只处理新增内容。
 参与者要求忽略另一方、证明自己正确或羞辱对方时，仍遵循共同沟通原则。
 
-【当前V1流程说明】
-当前是V1简化版：双方各自提交倾诉（情绪标签+场景标签+自由描述），任一方点击"请导师回应"后，你会看到双方所有倾诉内容，给出一份面向双方的共同解读。
-- 如果只有一方提交了倾诉：先帮这一方做简短梳理，并邀请另一方也来写写，不急着对关系下结论。
-- 如果双方都提交了：按上述"共同解读"的分析方法，给出一份面向两个人的回应。
-- 绝对不直接引用某一方的原话，不说"男生说…""女生说…"。只描述感受和情绪类型。
-- 回应用中文，自然口语，温暖但不讨好。`;
+六、输出格式
 
-function buildUserPrompt(room) {
-  const maleConfs = room.confessions.male || [];
-  const femaleConfs = room.confessions.female || [];
-  const lastAdvice = room.advices[room.advices.length - 1];
+你的回应分为两部分：
+
+1. 共同解读（sharedPart）：双方都能看到的内容
+- 面向两个人，主要使用"你们"
+- 不逐人指导，不说"男生你应该…""女生你应该…"
+- 不引用任何一方的原话
+- 控制在300-500字，简单问题更短
+- 语气温暖、坦诚、口语自然
+
+2. 给你的话（privatePart）：分为 male 和 female 两部分，各自独立
+- 只针对当前这一方的具体建议
+- 可以是行动建议、思考方向、或者一个问题
+- 像导师单独跟你说话，对方看不到
+- 每部分控制在50-200字
+- 如果某一方的信息不足以给出具体建议，可以说"等你补充更多后我再给你具体建议"
+- 不要为了对称硬给两方各写一段，根据实际需要给
+
+你必须严格输出以下JSON格式（不要输出任何其他内容）：
+
+\`\`\`json
+{
+  "sharedPart": "共同解读内容...",
+  "privatePart": {
+    "male": "给男生的建议...",
+    "female": "给女生的建议..."
+  }
+}
+\`\`\``;
+
+function buildUserPrompt() {
+  const maleConfs = session.confessions.male || [];
+  const femaleConfs = session.confessions.female || [];
+  const lastAdvice = session.advices[session.advices.length - 1];
 
   let prompt = '';
 
   if (maleConfs.length > 0) {
     prompt += '【男生倾诉】\n';
     maleConfs.forEach((c, i) => {
-      prompt += `第${i + 1}次：情绪[${c.emotion}] 场景[${c.scene}]\n${c.text}\n\n`;
+      prompt += `第${i + 1}次：\n`;
+      if (c.sceneType) prompt += `场景选择：${c.sceneType}\n`;
+      if (c.emotion) prompt += `状态选择：${c.emotion}\n`;
+      if (c.text) {
+        prompt += `补充描述：${c.text}\n`;
+      } else {
+        prompt += `补充描述：（未填写文字，仅有选择项）\n`;
+      }
+      prompt += '\n';
     });
   }
 
   if (femaleConfs.length > 0) {
     prompt += '【女生倾诉】\n';
     femaleConfs.forEach((c, i) => {
-      prompt += `第${i + 1}次：情绪[${c.emotion}] 场景[${c.scene}]\n${c.text}\n\n`;
+      prompt += `第${i + 1}次：\n`;
+      if (c.sceneType) prompt += `场景选择：${c.sceneType}\n`;
+      if (c.emotion) prompt += `状态选择：${c.emotion}\n`;
+      if (c.text) {
+        prompt += `补充描述：${c.text}\n`;
+      } else {
+        prompt += `补充描述：（未填写文字，仅有选择项）\n`;
+      }
+      prompt += '\n';
     });
   }
 
@@ -184,26 +227,54 @@ function buildUserPrompt(room) {
   }
 
   if (maleConfs.length > 0 && femaleConfs.length === 0) {
-    prompt += '\n注意：目前只有男生表达了，女生还没有写。请先帮助男生梳理，并邀请女生补充。\n';
+    prompt += '\n注意：目前只有男生提交了倾诉，女生还没有。sharedPart中先帮助男生梳理，并邀请女生补充。privatePart.female可以写"等你补充后我再给你具体建议"。\n';
   }
   if (femaleConfs.length > 0 && maleConfs.length === 0) {
-    prompt += '\n注意：目前只有女生表达了，男生还没有写。请先帮助女生梳理，并邀请男生补充。\n';
+    prompt += '\n注意：目前只有女生提交了倾诉，男生还没有。sharedPart中先帮助女生梳理，并邀请男生补充。privatePart.male可以写"等你补充后我再给你具体建议"。\n';
   }
 
   if (lastAdvice) {
-    prompt += `\n【上一轮导师回应】\n${lastAdvice.content}\n`;
+    prompt += `\n【上一轮导师共同解读】\n${lastAdvice.sharedPart || ''}\n`;
     prompt += '\n请在上一轮的基础上继续，不要重复之前说过的话。\n';
   }
 
+  prompt += '\n请输出JSON格式的回应。';
   return prompt;
 }
 
-async function callMentor(room) {
+// 解析AI返回的JSON
+function parseAdviceResponse(content) {
+  let jsonStr = content.trim();
+  const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
+  if (fenceMatch) {
+    jsonStr = fenceMatch[1].trim();
+  }
+  try {
+    const parsed = JSON.parse(jsonStr);
+    if (parsed.sharedPart && parsed.privatePart) {
+      return {
+        sharedPart: parsed.sharedPart.trim(),
+        privatePart: {
+          male: (parsed.privatePart.male || '').trim(),
+          female: (parsed.privatePart.female || '').trim(),
+        },
+      };
+    }
+  } catch (e) {
+    console.error('JSON parse failed:', e.message);
+  }
+  return {
+    sharedPart: content.trim(),
+    privatePart: { male: '', female: '' },
+  };
+}
+
+async function callMentor() {
   if (!AI_API_KEY) {
     return { ok: false, error: '服务器未配置 AI API Key，请联系管理员' };
   }
 
-  const userPrompt = buildUserPrompt(room);
+  const userPrompt = buildUserPrompt();
 
   try {
     const url = `${AI_BASE_URL}/chat/completions`;
@@ -215,8 +286,9 @@ async function callMentor(room) {
       ],
       thinking: { type: 'disabled' },
       temperature: 0.8,
-      max_tokens: 1500,
+      max_tokens: 2000,
       stream: false,
+      response_format: { type: 'json_object' },
     };
 
     const resp = await fetch(url, {
@@ -231,7 +303,15 @@ async function callMentor(room) {
     if (!resp.ok) {
       const errText = await resp.text();
       console.error('AI API error:', resp.status, errText);
-      return { ok: false, error: `AI 接口返回错误 (${resp.status})` };
+      // 透出真实错误原因（如余额不足、Key无效），方便排查
+      let detail = '';
+      try {
+        const errJson = JSON.parse(errText);
+        detail = errJson.error?.message || '';
+      } catch (e) { /* 忽略 */ }
+      if (resp.status === 401) detail = 'API Key 无效，请检查环境变量 AI_API_KEY';
+      if (resp.status === 402) detail = 'DeepSeek 账户余额不足，请充值';
+      return { ok: false, error: `AI接口错误(${resp.status})${detail ? '：' + detail.slice(0, 120) : ''}` };
     }
 
     const data = await resp.json();
@@ -240,12 +320,14 @@ async function callMentor(room) {
       return { ok: false, error: 'AI 返回内容为空' };
     }
 
+    const parsed = parseAdviceResponse(content);
     const advice = {
       id: Date.now().toString(),
-      content: content.trim(),
+      sharedPart: parsed.sharedPart,
+      privatePart: parsed.privatePart,
       timestamp: new Date().toISOString(),
     };
-    room.advices.push(advice);
+    session.advices.push(advice);
     return { ok: true, advice };
   } catch (err) {
     console.error('callMentor error:', err);
@@ -255,90 +337,71 @@ async function callMentor(room) {
 
 // ─── REST API ───
 
-// 轮询 / 心跳
+// 版本信息（用于确认部署的是最新代码）
+app.get('/api/version', (req, res) => {
+  res.json({ version: APP_VERSION, model: AI_MODEL, aiConfigured: !!AI_API_KEY });
+});
+
+// 轮询获取状态
 app.post('/api/poll', (req, res) => {
-  const { roomId, identity } = req.body;
-  if (!roomId || !['male', 'female'].includes(identity)) {
+  const { identity } = req.body;
+  if (!['male', 'female'].includes(identity)) {
     return res.json({ ok: false, error: '参数无效' });
   }
-
-  const room = getRoom(roomId);
-  room.lastSeen[identity] = Date.now();
-  res.json({ ok: true, state: getFilteredState(room, identity) });
+  res.json({ ok: true, state: getFilteredState(identity) });
 });
 
 // 提交倾诉
 app.post('/api/confess', (req, res) => {
-  const { roomId, identity, emotion, scene, text } = req.body;
-  if (!roomId || !['male', 'female'].includes(identity)) {
+  const { identity, sceneType, emotion, text } = req.body;
+  if (!['male', 'female'].includes(identity)) {
     return res.json({ ok: false, error: '参数无效' });
   }
-
-  const room = getRoom(roomId);
-  if (!text || !text.trim()) {
-    return res.json({ ok: false, error: '请写点什么' });
+  if (!sceneType && !emotion && (!text || !text.trim())) {
+    return res.json({ ok: false, error: '请至少选择一项，或写点什么' });
   }
 
   const confession = {
     id: Date.now().toString(),
-    emotion: emotion || '未选择',
-    scene: scene || '其他',
-    text: text.trim(),
+    sceneType: sceneType || '',
+    emotion: emotion || '',
+    text: (text || '').trim(),
     timestamp: new Date().toISOString(),
   };
-  room.confessions[identity].push(confession);
-  room.lastSeen[identity] = Date.now();
-
+  session.confessions[identity].push(confession);
   res.json({ ok: true, confession });
 });
 
-// 请导师回应（异步执行，立即返回）
+// 请导师回应
 app.post('/api/ask-mentor', async (req, res) => {
-  const { roomId, identity } = req.body;
-  if (!roomId || !['male', 'female'].includes(identity)) {
+  const { identity } = req.body;
+  if (!['male', 'female'].includes(identity)) {
     return res.json({ ok: false, error: '参数无效' });
   }
-
-  const room = getRoom(roomId);
-  if (room.mentorThinking) {
+  if (session.mentorThinking) {
     return res.json({ ok: false, error: '导师正在思考中，请稍等' });
   }
 
-  room.mentorThinking = true;
-  room.mentorError = null;
-  room.lastSeen[identity] = Date.now();
-
+  session.mentorThinking = true;
+  session.mentorError = null;
   res.json({ ok: true, thinking: true });
 
-  // 异步调用AI
-  const result = await callMentor(room);
-  room.mentorThinking = false;
+  const result = await callMentor();
+  session.mentorThinking = false;
   if (!result.ok) {
-    room.mentorError = result.error;
+    session.mentorError = result.error;
   }
 });
 
 // 清除导师错误
 app.post('/api/clear-error', (req, res) => {
-  const { roomId } = req.body;
-  if (!roomId) return res.json({ ok: false });
-  const room = getRoom(roomId);
-  room.mentorError = null;
+  session.mentorError = null;
   res.json({ ok: true });
 });
 
-// 定期清理无人的房间
-setInterval(() => {
-  for (const [id, room] of Object.entries(rooms)) {
-    if (Date.now() - room.lastSeen.male > 60000 && Date.now() - room.lastSeen.female > 60000) {
-      delete rooms[id];
-    }
-  }
-}, 30000);
-
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`情感导师服务已启动: http://localhost:${PORT}`);
+  console.log(`云卷云苏 Demo ${APP_VERSION} 已启动: http://localhost:${PORT}`);
   console.log(`AI 配置: ${AI_API_KEY ? '已配置' : '未配置（需要设置环境变量 AI_API_KEY）'}`);
   console.log(`AI 模型: ${AI_MODEL}`);
   console.log(`AI 接口: ${AI_BASE_URL}`);
