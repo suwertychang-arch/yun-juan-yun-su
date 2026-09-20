@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>云卷云苏 · 你们的小房间</title>
+<title>云卷云苏 · 情感导师 Demo</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   :root {
@@ -12,6 +12,10 @@
     --primary: #e88b8b;
     --primary-dark: #d4736f;
     --primary-light: #fce4e4;
+    --male-color: #6b9fd4;
+    --male-light: #e8f0fa;
+    --female-color: #e88b8b;
+    --female-light: #fce4e4;
     --text: #4a3f3a;
     --text-light: #8a7d77;
     --border: #f0e8e0;
@@ -26,80 +30,36 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* ─── 进入页 ─── */
-  #entryScreen {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    min-height: 100vh; padding: 24px;
-  }
-  .logo {
-    width: 72px; height: 72px;
-    background: linear-gradient(135deg, var(--primary), #f0a7a7);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 36px; margin-bottom: 16px;
-    box-shadow: 0 4px 16px rgba(232,139,139,0.3);
-  }
-  .entry-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
-  .entry-sub { font-size: 14px; color: var(--text-light); margin-bottom: 28px; }
-  .entry-card {
-    background: var(--card); border-radius: var(--radius);
-    padding: 24px; width: 100%; max-width: 360px; box-shadow: var(--shadow);
-  }
-  .form-group { margin-bottom: 16px; }
-  .form-label { font-size: 13px; color: var(--text-light); margin-bottom: 8px; display: block; }
-  .form-input {
-    width: 100%; padding: 12px 14px;
-    border: 2px solid var(--border); border-radius: 12px;
-    font-size: 16px; background: var(--bg); color: var(--text);
-    transition: border-color 0.2s;
-  }
-  .form-input:focus { border-color: var(--primary); outline: none; }
-  .identity-select { display: flex; gap: 12px; }
-  .identity-btn {
-    flex: 1; padding: 14px;
-    border: 2px solid var(--border); border-radius: 12px;
-    background: var(--bg); font-size: 15px; cursor: pointer;
-    transition: all 0.2s; text-align: center;
-  }
-  .identity-btn.active {
-    border-color: var(--primary); background: var(--primary-light);
-    color: var(--primary-dark); font-weight: 600;
-  }
-  .btn-primary {
-    width: 100%; padding: 14px;
-    background: var(--primary); color: #fff; border: none;
-    border-radius: 12px; font-size: 16px; font-weight: 600;
-    cursor: pointer; transition: background 0.2s;
-  }
-  .btn-primary:active { background: var(--primary-dark); }
-  .btn-primary:disabled { opacity: 0.5; }
-
-  /* ─── 主界面 ─── */
-  #mainScreen { display: none; flex-direction: column; height: 100vh; }
+  /* ─── 顶部栏 ─── */
   .topbar {
     display: flex; align-items: center; justify-content: space-between;
     padding: 12px 16px; background: var(--card);
     border-bottom: 1px solid var(--border); flex-shrink: 0;
+    position: sticky; top: 0; z-index: 10;
   }
-  .topbar-left { display: flex; align-items: center; gap: 10px; }
-  .room-dot {
-    width: 10px; height: 10px; border-radius: 50%;
-    background: #ccc; transition: background 0.3s;
+  .topbar-left { display: flex; align-items: center; gap: 8px; }
+  .app-logo { font-size: 20px; }
+  .app-name { font-size: 16px; font-weight: 700; color: var(--text); }
+  .topbar-right { display: flex; align-items: center; gap: 8px; }
+
+  /* 视角切换 */
+  .identity-switch {
+    display: flex; background: var(--bg); border-radius: 20px; padding: 3px; gap: 2px;
   }
-  .room-dot.online { background: #6bbf59; }
-  .room-info { font-size: 13px; color: var(--text-light); }
-  .topbar-actions { display: flex; gap: 8px; }
-  .icon-btn {
-    width: 36px; height: 36px; border: none; background: var(--bg);
-    border-radius: 10px; font-size: 18px; cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
+  .identity-tab {
+    padding: 6px 14px; border-radius: 18px; font-size: 13px; font-weight: 500;
+    cursor: pointer; transition: all 0.2s; color: var(--text-light);
+    border: none; background: transparent;
   }
+  .identity-tab.active.male { background: var(--male-color); color: #fff; }
+  .identity-tab.active.female { background: var(--female-color); color: #fff; }
 
   /* ─── 建议墙 ─── */
   .advice-wall {
     flex: 1; overflow-y: auto; padding: 16px;
     display: flex; flex-direction: column; gap: 12px;
     -webkit-overflow-scrolling: touch;
+    padding-bottom: 8px;
   }
   .advice-empty {
     text-align: center; color: var(--text-light);
@@ -121,29 +81,25 @@
   }
   .advice-name { font-size: 14px; font-weight: 600; color: var(--text); }
   .advice-time { font-size: 12px; color: var(--text-light); margin-left: auto; }
-  .advice-content { font-size: 15px; line-height: 1.75; white-space: pre-wrap; word-break: break-word; }
-  .advice-content strong { font-weight: 600; color: var(--primary-dark); }
 
-  /* 共同解读 / 给你的话 */
   .advice-section { margin-bottom: 14px; }
   .advice-section:last-child { margin-bottom: 0; }
   .advice-section-label {
-    display: inline-flex; align-items: center; gap: 4px;
-    font-size: 12px; font-weight: 600; color: var(--text-light);
-    margin-bottom: 6px;
+    display: inline-block; font-size: 12px; font-weight: 600;
+    margin-bottom: 6px; padding: 2px 8px; border-radius: 6px;
   }
-  .advice-section-label.shared { color: var(--primary); }
-  .advice-section-label.private { color: #7a8a6b; }
+  .advice-section-label.shared { color: var(--primary); background: var(--primary-light); }
+  .advice-section-label.private { color: #5a8a5a; background: #e8f0e8; }
   .advice-shared-box {
     background: var(--bg); border-radius: 12px; padding: 14px;
     font-size: 15px; line-height: 1.75; white-space: pre-wrap; word-break: break-word;
   }
   .advice-shared-box strong { font-weight: 600; color: var(--primary-dark); }
   .advice-private-box {
-    background: #f4f6f0; border: 1px dashed #c5d4b0; border-radius: 12px; padding: 14px;
+    background: #f0f5ef; border: 1px dashed #c0d4b0; border-radius: 12px; padding: 14px;
     font-size: 14px; line-height: 1.75; white-space: pre-wrap; word-break: break-word;
   }
-  .advice-private-box strong { font-weight: 600; color: #5a6e4a; }
+  .advice-private-box strong { font-weight: 600; color: #4a6a3a; }
   .advice-private-empty { font-size: 13px; color: var(--text-light); font-style: italic; }
 
   /* 思考动画 */
@@ -174,6 +130,11 @@
     display: flex; align-items: center; gap: 4px;
   }
   .confession-label .lock { font-size: 13px; }
+  .confession-label .identity-tag {
+    font-weight: 600; padding: 1px 6px; border-radius: 4px; font-size: 11px;
+  }
+  .confession-label .identity-tag.male { background: var(--male-light); color: var(--male-color); }
+  .confession-label .identity-tag.female { background: var(--female-light); color: var(--female-color); }
 
   /* 选择卡片 */
   .option-group { margin-bottom: 10px; }
@@ -183,13 +144,10 @@
     padding: 10px 12px;
     border: 1.5px solid var(--border); border-radius: 12px;
     background: var(--bg); font-size: 14px; color: var(--text);
-    cursor: pointer; transition: all 0.15s;
-    line-height: 1.5;
+    cursor: pointer; transition: all 0.15s; line-height: 1.5;
   }
-  .option-card.active {
-    border-color: var(--primary); background: var(--primary-light);
-    color: var(--primary-dark);
-  }
+  .option-card.active.male { border-color: var(--male-color); background: var(--male-light); color: var(--male-color); }
+  .option-card.active.female { border-color: var(--female-color); background: var(--female-light); color: var(--female-color); }
   .option-card:active { transform: scale(0.98); }
 
   /* 输入框 */
@@ -197,11 +155,10 @@
     width: 100%; min-height: 72px; max-height: 120px;
     padding: 10px 12px; border: 2px solid var(--border); border-radius: 12px;
     font-size: 15px; font-family: inherit; background: var(--bg); color: var(--text);
-    resize: none; transition: border-color 0.2s;
-    margin-bottom: 8px;
+    resize: none; transition: border-color 0.2s; margin-bottom: 8px;
   }
-  .confess-input:focus { border-color: var(--primary); outline: none; }
-  .confess-input.optional { min-height: 56px; }
+  .confess-input:focus.male { border-color: var(--male-color); outline: none; }
+  .confess-input:focus.female { border-color: var(--female-color); outline: none; }
 
   /* 倾诉历史 */
   .my-confessions { max-height: 100px; overflow-y: auto; margin-bottom: 8px; }
@@ -212,6 +169,15 @@
   }
   .my-confession-item .tags { color: var(--primary); margin-right: 6px; }
   .my-confession-item .text { color: var(--text); }
+
+  /* 对方状态提示 */
+  .other-status {
+    font-size: 12px; color: var(--text-light); padding: 6px 10px;
+    background: var(--bg); border-radius: 8px; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .other-status .dot { width: 6px; height: 6px; border-radius: 50%; background: #ccc; }
+  .other-status .dot.active { background: #6bbf59; }
 
   /* 操作按钮 */
   .confess-actions { display: flex; gap: 8px; }
@@ -226,16 +192,6 @@
     border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer;
   }
   .btn-mentor:disabled { opacity: 0.5; }
-
-  /* 邀请横幅 */
-  .invite-banner {
-    display: none; background: var(--primary-light);
-    padding: 12px 16px; border-radius: 12px;
-    margin-bottom: 10px; align-items: center; gap: 8px; cursor: pointer;
-  }
-  .invite-banner.show { display: flex; }
-  .invite-banner-text { flex: 1; font-size: 13px; color: var(--primary-dark); line-height: 1.5; }
-  .invite-banner-icon { font-size: 20px; }
 
   /* 引导语 */
   .guide-text {
@@ -253,60 +209,30 @@
   }
   .toast.show { opacity: 1; }
 
-  /* 状态栏 */
-  .status-bar {
-    text-align: center; padding: 8px;
-    font-size: 12px; color: var(--text-light);
-    background: var(--card); border-bottom: 1px solid var(--border);
-  }
-  .status-bar.waiting { color: #c0a060; }
-  .status-bar.ready { color: #6bbf59; }
-
-  /* 占位提示 */
-  .placeholder-hint {
-    text-align: center; padding: 20px; color: var(--text-light);
-    font-size: 14px; line-height: 1.7;
+  /* 主容器 */
+  #app {
+    display: flex; flex-direction: column; height: 100vh;
   }
 </style>
 </head>
 <body>
 
-<!-- ─── 进入页 ─── -->
-<div id="entryScreen">
-  <div class="logo">☁️</div>
-  <div class="entry-title">云卷云苏</div>
-  <div class="entry-sub">你们的小房间，一起看见彼此</div>
-  <div class="entry-card">
-    <div class="form-group">
-      <label class="form-label">房间号</label>
-      <input type="text" class="form-input" id="roomInput" placeholder="输入4位房间号" maxlength="4" inputmode="numeric" autocomplete="off">
-    </div>
-    <div class="form-group">
-      <label class="form-label">你是？</label>
-      <div class="identity-select">
-        <div class="identity-btn" data-identity="male" onclick="selectIdentity('male')">👨 男生</div>
-        <div class="identity-btn" data-identity="female" onclick="selectIdentity('female')">👩 女生</div>
-      </div>
-    </div>
-    <button class="btn-primary" id="joinBtn" onclick="joinRoom()">进入房间</button>
-  </div>
-</div>
-
-<!-- ─── 主界面 ─── -->
-<div id="mainScreen">
+<div id="app">
+  <!-- 顶部栏 -->
   <div class="topbar">
     <div class="topbar-left">
-      <span class="room-dot" id="dotMale"></span>
-      <span class="room-dot" id="dotFemale"></span>
-      <span class="room-info" id="roomInfo">房间 ----</span>
+      <span class="app-logo">☁️</span>
+      <span class="app-name">云卷云苏</span>
     </div>
-    <div class="topbar-actions">
-      <button class="icon-btn" id="copyBtn" onclick="copyLink()" title="复制链接给TA" style="display:none">🔗</button>
+    <div class="topbar-right">
+      <div class="identity-switch">
+        <button class="identity-tab male active" onclick="switchIdentity('male')">👨 男生</button>
+        <button class="identity-tab female" onclick="switchIdentity('female')">👩 女生</button>
+      </div>
     </div>
   </div>
 
-  <div class="status-bar waiting" id="statusBar">等待TA加入…</div>
-
+  <!-- 建议墙 -->
   <div class="advice-wall" id="adviceWall">
     <div class="advice-empty" id="adviceEmpty">
       <div class="emoji">🌱</div>
@@ -318,45 +244,28 @@
     </div>
   </div>
 
+  <!-- 倾诉区 -->
   <div class="confession-area" id="confessionArea">
-    <!-- 邀请横幅（甲方写完后显示） -->
-    <div class="invite-banner" id="inviteBanner" onclick="copyLink()">
-      <span class="invite-banner-icon">🔗</span>
-      <span class="invite-banner-text">TA还没加入，点这里复制链接发给TA</span>
-    </div>
-
-    <!-- 倾诉区动态内容 -->
     <div id="confessionContent"></div>
   </div>
 </div>
 
-<!-- ─── Toast ─── -->
+<!-- Toast -->
 <div class="toast" id="toast"></div>
 
 <script>
 // ─── 全局状态 ───
-let myIdentity = null;
-let myRoomId = null;
-let isInitiator = false; // 是否为发起方（先进入房间的一方）
+let myIdentity = 'male';
 let pollTimer = null;
 let renderedAdviceIds = new Set();
 let renderedConfessionIds = new Set();
 
-// 甲方场景选项
+// 场景选项（通用，男女都用同一套）
 const SCENE_OPTIONS = [
   { value: '我们最近在一次具体的事上有分歧', label: '我们最近在一次具体的事上有分歧' },
   { value: '我有些话想跟TA说但一直没找到机会', label: '我有些话想跟TA说但一直没找到机会' },
   { value: '我觉得TA最近有些变化，不太确定', label: '我觉得TA最近有些变化，不太确定' },
   { value: '我们好像还好，但有些东西在慢慢积累', label: '我们好像还好，但有些东西在慢慢积累' },
-  { value: '其他', label: '其他' },
-];
-
-// 乙方状态选项
-const STATUS_OPTIONS = [
-  { value: '我大概猜到TA想聊什么，我也有话想说', label: '我大概猜到TA想聊什么，我也有话想说' },
-  { value: '我不太确定TA想聊什么，但我最近确实有些感受', label: '我不太确定TA想聊什么，但我最近确实有些感受' },
-  { value: '其实我也觉得我们之间有些需要聊聊的', label: '其实我也觉得我们之间有些需要聊聊的' },
-  { value: '我没什么特别的想法，但我愿意参与', label: '我没什么特别的想法，但我愿意参与' },
   { value: '其他', label: '其他' },
 ];
 
@@ -374,171 +283,85 @@ async function apiCall(path, body) {
   }
 }
 
-// ─── 进入房间 ───
-function selectIdentity(id) {
-  document.querySelectorAll('.identity-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`[data-identity="${id}"]`).classList.add('active');
+// ─── 切换视角 ───
+function switchIdentity(id) {
   myIdentity = id;
-}
-
-document.getElementById('roomInput').addEventListener('input', (e) => {
-  e.target.value = e.target.value.replace(/[^0-9]/g, '');
-});
-
-async function joinRoom() {
-  const roomId = document.getElementById('roomInput').value.trim();
-  if (!roomId) { showToast('请输入房间号'); return; }
-  if (!myIdentity) { showToast('请选择你是男生还是女生'); return; }
-
-  myRoomId = roomId;
+  // 更新 tab 高亮
+  document.querySelectorAll('.identity-tab').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.identity-tab.${id}`).classList.add('active');
+  // 清空已渲染记录，重新渲染
   renderedAdviceIds.clear();
   renderedConfessionIds.clear();
+  // 清空建议墙卡片（保留 empty 和 thinking）
+  const wall = document.getElementById('adviceWall');
+  wall.querySelectorAll('.advice-card').forEach(c => c.remove());
+  // 重新渲染倾诉区
+  renderConfessionArea();
+  // 立即拉取数据
+  poll();
+}
 
-  // 先poll一次，看看房间是否已存在（有对方在）
-  const result = await apiCall('/api/poll', { roomId, identity: myIdentity });
-  if (result.ok) {
-    const otherId = myIdentity === 'male' ? 'female' : 'male';
-    // 如果对方已经在线或已有倾诉，说明我是被邀请方
-    const otherOnline = result.state.online[otherId];
-    const otherHasContent = result.state.otherHasConfessed;
-    isInitiator = !otherOnline && !otherHasContent;
+// ─── 渲染倾诉区 ───
+function renderConfessionArea() {
+  const container = document.getElementById('confessionContent');
+  const idLabel = myIdentity === 'male' ? '男生' : '女生';
+  const idClass = myIdentity;
 
-    document.getElementById('entryScreen').style.display = 'none';
-    document.getElementById('mainScreen').style.display = 'flex';
-    document.getElementById('roomInfo').textContent = `房间 ${myRoomId}`;
+  let html = `
+    <div class="confession-label">
+      <span class="lock">🔒</span>
+      <span>你的倾诉区 · </span>
+      <span class="identity-tag ${idClass}">${idLabel}视角</span>
+      <span> · 只有导师能看到</span>
+    </div>
+    <div class="guide-text">写下你想聊的事、你的感受、你想让对方知道但一直没说的。切换视角可以模拟另一方。</div>
+    <div class="option-group">
+      <div class="option-group-title">选一个最贴近你情况的：</div>
+      <div class="option-list">
+        ${SCENE_OPTIONS.map(o => `<div class="option-card ${idClass}" data-scene="${o.value}" onclick="selectScene(this)">${o.label}</div>`).join('')}
+      </div>
+    </div>
+    <textarea class="confess-input ${idClass}" id="confessInput" placeholder="写下具体的事、你的感受、你想让对方知道但一直没说的…" oninput="autoResize(this)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
+    <div class="confess-actions">
+      <button class="btn-confess" onclick="submitConfession()">提交倾诉</button>
+      <button class="btn-mentor" id="mentorBtn" onclick="askMentor()">请导师回应</button>
+    </div>
+  `;
 
-    updateUI(result.state);
-    renderConfessionArea();
-    startPolling();
-  } else {
-    showToast(result.error || '进入房间失败');
-  }
+  container.innerHTML = html;
 }
 
 // ─── 轮询 ───
+async function poll() {
+  const result = await apiCall('/api/poll', { identity: myIdentity });
+  if (result.ok) {
+    updateUI(result.state);
+  }
+}
+
 function startPolling() {
   stopPolling();
-  pollTimer = setInterval(async () => {
-    if (!myRoomId || !myIdentity) return;
-    const result = await apiCall('/api/poll', { roomId: myRoomId, identity: myIdentity });
-    if (result.ok) {
-      updateUI(result.state);
-    }
-  }, 2000);
+  pollTimer = setInterval(poll, 2000);
 }
 
 function stopPolling() {
   if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
 }
 
-// ─── 渲染倾诉区（根据是否发起方显示不同内容）───
-function renderConfessionArea() {
-  const container = document.getElementById('confessionContent');
-  const myConf = document.getElementById('myConfessions');
-
-  // 如果已提交倾诉，显示历史
-  let confessionsHtml = '<div class="my-confessions" id="myConfessionsList" style="display:none"></div>';
-
-  let formHtml = '';
-
-  if (isInitiator) {
-    // 甲方：场景选择 + 自由描述
-    formHtml = `
-      <div class="confession-label">
-        <span class="lock">🔒</span>
-        <span>你的倾诉区 · 只有导师能看到，对方无法查看</span>
-      </div>
-      <div class="guide-text">把你想聊的事写下来，导师会帮你们一起看。写完后可以复制链接发给TA。</div>
-      <div class="option-group">
-        <div class="option-group-title">选一个最贴近你情况的：</div>
-        <div class="option-list">
-          ${SCENE_OPTIONS.map(o => `<div class="option-card" data-scene="${o.value}" onclick="selectScene(this)">${o.label}</div>`).join('')}
-        </div>
-      </div>
-      <textarea class="confess-input" id="confessInput" placeholder="写下具体的事、你的感受、你想让对方知道但一直没说的…" oninput="autoResize(this)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
-      <div class="confess-actions">
-        <button class="btn-confess" onclick="submitConfession()">提交倾诉</button>
-        <button class="btn-mentor" id="mentorBtn" onclick="askMentor()">请导师回应</button>
-      </div>
-    `;
-  } else {
-    // 乙方：状态选择 + 可选补充
-    formHtml = `
-      <div class="confession-label">
-        <span class="lock">🔒</span>
-        <span>你的倾诉区 · 只有导师能看到，对方无法查看</span>
-      </div>
-      <div class="guide-text">TA有些事想和你一起聊聊。导师也想先听听你——你最近的感受，或者你觉得你们之间有没有什么事需要聊聊的？想到什么写什么就好，不需要针对TA的内容回应。</div>
-      <div class="option-group">
-        <div class="option-group-title">选一个最接近你状态的：</div>
-        <div class="option-list">
-          ${STATUS_OPTIONS.map(o => `<div class="option-card" data-status="${o.value}" onclick="selectStatus(this)">${o.label}</div>`).join('')}
-        </div>
-      </div>
-      <textarea class="confess-input optional" id="confessInput" placeholder="想补充的话可以写在这里（可选，不写也可以）" oninput="autoResize(this)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false"></textarea>
-      <div class="confess-actions">
-        <button class="btn-confess" onclick="submitConfession()">提交</button>
-        <button class="btn-mentor" id="mentorBtn" onclick="askMentor()">请导师回应</button>
-      </div>
-    `;
-  }
-
-  container.innerHTML = confessionsHtml + formHtml;
-}
-
 // ─── 更新界面 ───
 function updateUI(state) {
-  // 在线状态
-  document.getElementById('dotMale').classList.toggle('online', state.online.male);
-  document.getElementById('dotFemale').classList.toggle('online', state.online.female);
-
-  // 状态栏
-  const statusBar = document.getElementById('statusBar');
-  const otherSide = myIdentity === 'male' ? '女生' : '男生';
-  if (state.online.male && state.online.female) {
-    statusBar.textContent = '你们都到齐了，可以开始倾诉了';
-    statusBar.className = 'status-bar ready';
-  } else {
-    statusBar.textContent = isInitiator
-      ? `等待${otherSide}加入… 写完倾诉后复制链接发给TA`
-      : `等待${otherSide}加入…`;
-    statusBar.className = 'status-bar waiting';
-  }
-
-  // 邀请横幅（甲方且已提交倾诉时显示）
-  const inviteBanner = document.getElementById('inviteBanner');
-  const copyBtn = document.getElementById('copyBtn');
-  const hasMyConfessions = (state.myConfessions || []).length > 0;
-  const otherOnline = state.online[myIdentity === 'male' ? 'female' : 'male'];
-
-  if (isInitiator && hasMyConfessions && !otherOnline) {
-    inviteBanner.classList.add('show');
-    copyBtn.style.display = 'flex';
-  } else {
-    inviteBanner.classList.remove('show');
-    if (otherOnline) {
-      copyBtn.style.display = 'flex';
-    }
-  }
-
-  // 建议墙 - 增量添加
   const wall = document.getElementById('adviceWall');
   const empty = document.getElementById('adviceEmpty');
   const thinking = document.getElementById('thinkingCard');
 
+  // 建议墙
   if (state.advices.length > 0) {
     empty.style.display = 'none';
   } else {
     empty.style.display = 'block';
-    // 根据角色更新提示
-    const hint = document.getElementById('emptyHint');
-    if (isInitiator) {
-      hint.textContent = '在下方选一个情况写下你想聊的事，然后点「请导师回应」';
-    } else {
-      hint.textContent = '在下方选一个最接近你状态的，写不写都行，然后点「请导师回应」';
-    }
   }
 
+  // 增量添加新建议卡片
   let newAdviceAdded = false;
   state.advices.forEach(advice => {
     if (!renderedAdviceIds.has(advice.id)) {
@@ -549,7 +372,7 @@ function updateUI(state) {
       card.innerHTML = `
         <div class="advice-header">
           <div class="advice-avatar">✨</div>
-          <span class="advice-name">云卷云苏</span>
+          <span class="advice-name">情感导师</span>
           <span class="advice-time">${time}</span>
         </div>
         <div class="advice-section">
@@ -589,42 +412,59 @@ function updateUI(state) {
   // 导师错误
   if (state.mentorError) {
     showToast(state.mentorError);
-    apiCall('/api/clear-error', { roomId: myRoomId });
+    apiCall('/api/clear-error', {});
   }
 
   // 我的倾诉历史 - 增量更新
-  const myConfList = document.getElementById('myConfessionsList');
-  if (myConfList) {
-    if (state.myConfessions.length > 0) {
-      myConfList.style.display = 'block';
-      state.myConfessions.forEach(c => {
-        if (!renderedConfessionIds.has(c.id)) {
-          const item = document.createElement('div');
-          item.className = 'my-confession-item';
-          const time = new Date(c.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
-          let tagParts = [];
-          if (c.sceneType) tagParts.push(c.sceneType);
-          if (c.emotion) tagParts.push(c.emotion);
-          const tags = tagParts.length > 0 ? `<span class="tags">[${tagParts.join(' · ')}]</span>` : '';
-          const text = c.text ? `<span class="text">${escapeHtml(c.text)}</span>` : '<span class="text">（仅选择项）</span>';
-          item.innerHTML = `${tags}${text} <span style="float:right">${time}</span>`;
-          myConfList.appendChild(item);
-          renderedConfessionIds.add(c.id);
-        }
-      });
+  // 需要重建因为切换视角时内容不同
+  const existingList = document.getElementById('myConfessionsList');
+  if (existingList) existingList.remove();
+
+  if (state.myConfessions.length > 0) {
+    const list = document.createElement('div');
+    list.className = 'my-confessions';
+    list.id = 'myConfessionsList';
+    state.myConfessions.forEach(c => {
+      const item = document.createElement('div');
+      item.className = 'my-confession-item';
+      const time = new Date(c.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+      let tagParts = [];
+      if (c.sceneType) tagParts.push(c.sceneType);
+      if (c.emotion) tagParts.push(c.emotion);
+      const tags = tagParts.length > 0 ? `<span class="tags">[${tagParts.join(' · ')}]</span>` : '';
+      const text = c.text ? `<span class="text">${escapeHtml(c.text)}</span>` : '<span class="text">（仅选择项）</span>';
+      item.innerHTML = `${tags}${text} <span style="float:right">${time}</span>`;
+      list.appendChild(item);
+    });
+    // 插入到 guide-text 前面
+    const guideText = document.querySelector('.guide-text');
+    if (guideText) {
+      guideText.parentNode.insertBefore(list, guideText);
     }
+  }
+
+  // 对方状态提示
+  const otherLabel = myIdentity === 'male' ? '女生' : '男生';
+  let otherStatus = document.getElementById('otherStatus');
+  if (!otherStatus) {
+    otherStatus = document.createElement('div');
+    otherStatus.className = 'other-status';
+    otherStatus.id = 'otherStatus';
+    const guideText = document.querySelector('.guide-text');
+    if (guideText) {
+      guideText.parentNode.insertBefore(otherStatus, guideText);
+    }
+  }
+  if (state.otherConfessionCount > 0) {
+    otherStatus.innerHTML = `<span class="dot active"></span>${otherLabel}已倾诉 ${state.otherConfessionCount} 次（内容对你不可见）`;
+  } else {
+    otherStatus.innerHTML = `<span class="dot"></span>${otherLabel}还没有倾诉，你可以先写，导师会先帮你梳理`;
   }
 }
 
-// ─── 选择场景（甲方）───
+// ─── 选择场景 ───
 function selectScene(el) {
   document.querySelectorAll('[data-scene]').forEach(b => b.classList.remove('active'));
-  el.classList.add('active');
-}
-
-// ─── 选择状态（乙方）───
-function selectStatus(el) {
-  document.querySelectorAll('[data-status]').forEach(b => b.classList.remove('active'));
   el.classList.add('active');
 }
 
@@ -633,27 +473,18 @@ async function submitConfession() {
   const inputEl = document.getElementById('confessInput');
   const text = inputEl.value.trim();
 
-  let sceneType = '';
-  let emotion = '';
+  const selected = document.querySelector('[data-scene].active');
+  const sceneType = selected ? selected.dataset.scene : '';
 
-  if (isInitiator) {
-    // 甲方：必须选场景 + 写文字
-    const selected = document.querySelector('[data-scene].active');
-    if (!selected) { showToast('请选一个最贴近你情况的'); return; }
-    sceneType = selected.dataset.scene;
-    if (!text) { showToast('请写下你想说的事'); return; }
-  } else {
-    // 乙方：必须选状态，文字可选
-    const selected = document.querySelector('[data-status].active');
-    if (!selected) { showToast('请选一个最接近你状态的'); return; }
-    emotion = selected.dataset.status;
+  if (!sceneType && !text) {
+    showToast('请选一个情况，或写点什么');
+    return;
   }
 
   const result = await apiCall('/api/confess', {
-    roomId: myRoomId,
     identity: myIdentity,
     sceneType,
-    emotion,
+    emotion: '',
     text,
   });
 
@@ -662,8 +493,7 @@ async function submitConfession() {
     autoResize(inputEl);
     document.querySelectorAll('.option-card.active').forEach(b => b.classList.remove('active'));
     showToast('已提交，导师看到了');
-    const pollResult = await apiCall('/api/poll', { roomId: myRoomId, identity: myIdentity });
-    if (pollResult.ok) updateUI(pollResult.state);
+    await poll();
   } else {
     showToast(result.error || '提交失败');
   }
@@ -671,35 +501,12 @@ async function submitConfession() {
 
 // ─── 请导师回应 ───
 async function askMentor() {
-  const result = await apiCall('/api/ask-mentor', { roomId: myRoomId, identity: myIdentity });
+  const result = await apiCall('/api/ask-mentor', { identity: myIdentity });
   if (result.ok) {
-    const pollResult = await apiCall('/api/poll', { roomId: myRoomId, identity: myIdentity });
-    if (pollResult.ok) updateUI(pollResult.state);
+    await poll();
   } else {
     showToast(result.error || '请求失败');
   }
-}
-
-// ─── 复制链接 ───
-function copyLink() {
-  const url = `${location.origin}/?room=${myRoomId}`;
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(url).then(() => {
-      showToast('链接已复制，发给TA吧');
-    }).catch(() => { fallbackCopy(url); });
-  } else {
-    fallbackCopy(url);
-  }
-}
-
-function fallbackCopy(url) {
-  const input = document.createElement('input');
-  input.value = url;
-  document.body.appendChild(input);
-  input.select();
-  document.execCommand('copy');
-  document.body.removeChild(input);
-  showToast('链接已复制，发给TA吧');
 }
 
 // ─── 工具函数 ───
@@ -732,16 +539,13 @@ function escapeHtml(text) {
   return div.innerHTML;
 }
 
-// ─── URL 参数自动填充房间号 ───
-window.addEventListener('DOMContentLoaded', () => {
-  const params = new URLSearchParams(location.search);
-  const room = params.get('room');
-  if (room) document.getElementById('roomInput').value = room;
-});
+// ─── 初始化 ───
+renderConfessionArea();
+startPolling();
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) { stopPolling(); }
-  else if (myRoomId && myIdentity) { startPolling(); }
+  else { startPolling(); }
 });
 </script>
 
