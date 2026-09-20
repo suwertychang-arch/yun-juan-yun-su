@@ -1,0 +1,12 @@
+{
+  "name": "yun-juan-yun-su",
+  "version": "1.0.0",
+  "description": "云卷云苏 - 情侣共同倾诉 + AI关系沟通导师",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.22.3"
+  }
+}

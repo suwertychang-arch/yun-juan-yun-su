@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>云卷云苏 · 部署教程</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #faf6f1;
+    color: #4a3f3a;
+    line-height: 1.8;
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  h1 {
+    text-align: center;
+    color: #d4736f;
+    margin: 30px 0 10px;
+    font-size: 28px;
+  }
+  .subtitle {
+    text-align: center;
+    color: #8a7d77;
+    font-size: 14px;
+    margin-bottom: 40px;
+  }
+  .step {
+    background: #fff;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    background: #e88b8b;
+    color: #fff;
+    border-radius: 50%;
+    font-size: 16px;
+    font-weight: 700;
+    margin-right: 10px;
+    flex-shrink: 0;
+  }
+  .step-title {
+    display: flex;
+    align-items: center;
+    font-size: 19px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    color: #4a3f3a;
+  }
+  .step-body { font-size: 15px; line-height: 2; }
+  .step-body p { margin-bottom: 10px; }
+  .step-body ol { margin-left: 20px; margin-bottom: 10px; }
+  .step-body li { margin-bottom: 6px; }
+  .highlight {
+    background: #fce4e4;
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #d4736f;
+    font-weight: 600;
+  }
+  .code-block {
+    background: #2d2d2d;
+    color: #f8f8f2;
+    padding: 14px 16px;
+    border-radius: 10px;
+    font-family: "SF Mono", "Fira Code", monospace;
+    font-size: 13px;
+    overflow-x: auto;
+    margin: 10px 0;
+    line-height: 1.6;
+  }
+  .tip {
+    background: #fff8e1;
+    border-left: 4px solid #ffc107;
+    padding: 12px 16px;
+    border-radius: 8px;
+    margin: 10px 0;
+    font-size: 14px;
+  }
+  .tip-title { font-weight: 700; color: #f57f17; }
+  .final {
+    background: linear-gradient(135deg, #e88b8b, #f0a7a7);
+    color: #fff;
+    text-align: center;
+    padding: 30px;
+    border-radius: 16px;
+    margin-top: 20px;
+  }
+  .final h2 { font-size: 22px; margin-bottom: 10px; }
+  .final p { font-size: 15px; opacity: 0.95; }
+</style>
+</head>
+<body>
+
+<h1>☁️ 云卷云苏 · 部署教程</h1>
+<p class="subtitle">从小白到上线，跟着做就行，每一步都有说明</p>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">1</span>注册 GitHub 账号</div>
+  <div class="step-body">
+    <p>GitHub 是一个代码托管平台，我们把代码放上去，Railway 才能自动拉取部署。</p>
+    <ol>
+      <li>电脑浏览器打开 <span class="highlight">github.com</span></li>
+      <li>右上角点 <span class="highlight">Sign up</span>（注册）</li>
+      <li>填邮箱、密码、用户名，完成注册</li>
+      <li>去邮箱点验证链接，激活账号</li>
+    </ol>
+    <div class="tip">
+      <span class="tip-title">已经有账号？</span> 直接跳到下一步
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">2</span>在 GitHub 上创建仓库</div>
+  <div class="step-body">
+    <ol>
+      <li>登录 GitHub 后，右上角点 <span class="highlight">+</span> → <span class="highlight">New repository</span></li>
+      <li>Repository name 填：<code>yun-juan-yun-su</code></li>
+      <li>选 <span class="highlight">Public</span>（公开，Railway 免费版需要公开仓库）</li>
+      <li>其他都不用动，拉到底点 <span class="highlight">Create repository</span></li>
+    </ol>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">3</span>下载安装 Git</div>
+  <div class="step-body">
+    <p>Git 是把本地代码推到 GitHub 的工具。</p>
+    <ol>
+      <li>打开 <span class="highlight">git-scm.com/downloads</span></li>
+      <li>下载 Windows 版，双击安装，一路点 <span class="highlight">Next</span>，全部默认</li>
+      <li>安装完，在桌面空白处右键，应该能看到 <span class="highlight">"Open Git Bash here"</span></li>
+    </ol>
+    <div class="tip">
+      <span class="tip-title">Mac 用户</span> Mac 自带 Git，打开"终端"app 就能用。
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">4</span>解压项目代码到电脑</div>
+  <div class="step-body">
+    <ol>
+      <li>把下载的压缩包解压，得到一个文件夹 <code>yun-juan-yun-su</code></li>
+      <li>文件夹结构应该是：
+        <div class="code-block">yun-juan-yun-su/
+├── server.js
+├── package.json
+├── Dockerfile
+├── .dockerignore
+├── .gitignore
+└── public/
+    └── index.html</div>
+      </li>
+    </ol>
+    <div class="tip">
+      <span class="tip-title">注意</span> Windows 可能自动给 <code>.dockerignore</code> 和 <code>Dockerfile</code> 加上 <code>.txt</code> 后缀，需要去掉。在文件夹里点"查看"→勾选"文件扩展名"就能看到。
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">5</span>把代码推到 GitHub</div>
+  <div class="step-body">
+    <ol>
+      <li>进入 <code>yun-juan-yun-su</code> 文件夹</li>
+      <li>在文件夹空白处右键 → 点 <span class="highlight">"Open Git Bash here"</span></li>
+      <li>依次粘贴执行以下命令（每行回车一次）：</li>
+    </ol>
+    <div class="code-block">git init
+git add -A
+git commit -m "云卷云苏上线"
+git branch -M main
+git remote add origin https://github.com/你的用户名/yun-juan-yun-su.git
+git push -u origin main</div>
+    <div class="tip">
+      <span class="tip-title">⚠️ 第5步</span> 把 <code>你的用户名</code> 换成你 GitHub 的实际用户名！
+    </div>
+    <div class="tip">
+      <span class="tip-title">网络报错？</span> 国内推送 GitHub 需要代理。开启代理软件的全局模式，或执行：<br>
+      <code>git config --global http.proxy http://127.0.0.1:7890</code><br>
+      <code>git config --global https.proxy http://127.0.0.1:7890</code>
+    </div>
+    <div class="tip">
+      <span class="tip-title">要求输入密码？</span> 需要用 GitHub Personal Access Token（不是账号密码）。去 GitHub → Settings → Developer settings → Personal access tokens → Generate new token，勾选 <code>repo</code> 权限，生成的 token 当密码用。
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">6</span>用 Railway 部署</div>
+  <div class="step-body">
+    <ol>
+      <li>打开 <span class="highlight">railway.app</span>，点 Login，选 GitHub 登录</li>
+      <li>点 <span class="highlight">New Project</span> → <span class="highlight">Deploy from GitHub repo</span></li>
+      <li>找到 <span class="highlight">yun-juan-yun-su</span> 仓库，点选它</li>
+      <li>选 <span class="highlight">Deploy now</span></li>
+      <li>Railway 会自动识别 Dockerfile，构建并启动，约1-3分钟</li>
+    </ol>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">7</span>配置环境变量</div>
+  <div class="step-body">
+    <ol>
+      <li>在 Railway 项目页面点击你的 Service</li>
+      <li>点击 <span class="highlight">Settings</span> 标签页</li>
+      <li>找到 <span class="highlight">Environment Variables</span> 区域</li>
+      <li>添加以下三个变量：</li>
+    </ol>
+    <div class="code-block">AI_API_KEY = 你的 DeepSeek API Key
+AI_BASE_URL = https://api.deepseek.com
+AI_MODEL = deepseek-v4-pro</div>
+    <div class="tip">
+      <span class="tip-title">获取 API Key</span> 去 <span class="highlight">platform.deepseek.com</span> 注册，在 API Keys 页面创建，复制 <code>sk-xxx</code> 开头的 Key。
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">8</span>生成公网地址</div>
+  <div class="step-body">
+    <ol>
+      <li>在 Railway 的 <span class="highlight">Settings</span> 标签页</li>
+      <li>找到 <span class="highlight">Networking / Domains</span> 区域</li>
+      <li>点 <span class="highlight">Generate Domain</span></li>
+      <li>得到一个地址，类似：<code>https://yun-juan-yun-su-xxx.up.railway.app</code></li>
+      <li>手机浏览器打开这个地址就能用了！</li>
+    </ol>
+    <div class="tip">
+      <span class="tip-title">✅ 部署成功</span> 打开地址看到"云卷云苏"的进入页面就成功了。
+    </div>
+  </div>
+</div>
+
+<div class="step">
+  <div class="step-title"><span class="step-num">9</span>开始使用</div>
+  <div class="step-body">
+    <ol>
+      <li>打开公网地址，输入4位房间号，选男生/女生，点"进入房间"</li>
+      <li>发起方：选一个场景，写下想说的事，点"提交倾诉"</li>
+      <li>提交后出现邀请横幅，点 🔗 复制链接发给对方</li>
+      <li>被邀请方：打开链接，看到引导语，选一个状态（文字可选），点"提交"</li>
+      <li>任一方点"请导师回应"</li>
+      <li>导师给出 <strong>共同解读</strong>（双方都看到）+ <strong>给你的话</strong>（仅自己看到）</li>
+    </ol>
+  </div>
+</div>
+
+<div class="final">
+  <h2>🎉 就这样！</h2>
+  <p>有任何步骤卡住了，把报错截图发给我，我帮你看。</p>
+</div>
+
+</body>
+</html>
